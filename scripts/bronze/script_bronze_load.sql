@@ -1,4 +1,3 @@
-```
 -- Clear and load CRM customer info
 TRUNCATE TABLE bronze_crm_cust_info;
 LOAD DATA LOCAL INFILE '/Users/bryanacuna/Documents/Education/SQL/Baraa/SQL Data Warehouse Project/datasets/source_crm/cust_info.csv'
