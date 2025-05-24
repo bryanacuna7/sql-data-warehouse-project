@@ -1,3 +1,27 @@
+/*
+=============================================================
+Load Source Data into Bronze Layer Tables
+=============================================================
+Script Purpose:
+    This script truncates and reloads data from various CSV source files
+    into their corresponding tables within the 'bronze' schema. These
+    tables serve as the raw ingestion layer of the data warehouse, storing
+    untransformed CRM and ERP data.
+
+Sources:
+    - CRM customer info (cust_info.csv)
+    - CRM product info (prd_info.csv)
+    - CRM sales details (sales_details.csv)
+    - ERP customer data (CUST_AZ12.csv)
+    - ERP location data (LOC_A101.csv)
+    - ERP product categories (PX_CAT_G1V2.csv)
+
+WARNING:
+    Each table is truncated before data is reloaded. Any existing data in
+    the tables will be permanently removed. Ensure backups exist if needed.
+=============================================================
+*/
+
 -- Clear and load CRM customer info
 TRUNCATE TABLE bronze_crm_cust_info;
 LOAD DATA LOCAL INFILE '/Users/bryanacuna/Documents/Education/SQL/Baraa/SQL Data Warehouse Project/datasets/source_crm/cust_info.csv'
