@@ -1,3 +1,5 @@
+-- language: sql
+
 /*
 =============================================================
 Load Source Data into Bronze Layer Tables
