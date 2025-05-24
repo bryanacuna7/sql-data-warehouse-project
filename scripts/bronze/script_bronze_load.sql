@@ -1,5 +1,4 @@
 -- language: sql
-select 1;
 
 /*
 =============================================================
@@ -24,6 +23,8 @@ WARNING:
     the tables will be permanently removed. Ensure backups exist if needed.
 =============================================================
 */
+
+select 1;
 
 -- Clear and load CRM customer info
 TRUNCATE TABLE bronze_crm_cust_info;
