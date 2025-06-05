@@ -23,18 +23,20 @@ CREATE TABLE silver_crm_cust_info (
     dwh_create_date DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Drop and recreate table: silver_crm_prd_info
+-- Drop the table if it already exists to ensure a clean slate
 DROP TABLE IF EXISTS silver_crm_prd_info;
 
+-- Create the 'silver_crm_prd_info' table with product details
 CREATE TABLE silver_crm_prd_info (
-    prd_id       INT,
-    prd_key      NVARCHAR(50),
-    prd_nm       NVARCHAR(50),
-    prd_cost     INT,
-    prd_line     NVARCHAR(50),
-    prd_start_dt DATETIME,
-    prd_end_dt   DATETIME,
-    dwh_create_date DATETIME DEFAULT CURRENT_TIMESTAMP
+	prd_id INT,
+	cat_id NVARCHAR(50),        -- Category ID extracted from product key
+	prd_key NVARCHAR(50),       -- Unique product key (modified version)
+	prd_nm NVARCHAR(50),        -- Product name
+	prd_cost INT,               -- Product cost, defaults to 0 if null
+	prd_line NVARCHAR(50),      -- Product line (e.g., Mountain, Road)
+	prd_start_dt DATE,          -- Product start date
+	prd_end_dt DATE,            -- Product end date (calculated using LEAD)
+	dwh_create_date DATETIME DEFAULT CURRENT_TIMESTAMP -- Record creation timestamp
 );
 
 -- Drop and recreate table: silver_crm_sales_details
@@ -44,9 +46,9 @@ CREATE TABLE silver_crm_sales_details (
     sls_ord_num  NVARCHAR(50),
     sls_prd_key  NVARCHAR(50),
     sls_cust_id  INT,
-    sls_order_dt INT,
-    sls_ship_dt  INT,
-    sls_due_dt   INT,
+    sls_order_dt DATE,
+    sls_ship_dt  DATE,
+    sls_due_dt   DATE,
     sls_sales    INT,
     sls_quantity INT,
     sls_price    INT,
