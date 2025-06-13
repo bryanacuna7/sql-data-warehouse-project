@@ -18,6 +18,33 @@ SELECT DISTINCT
     END AS standardized_gen
 FROM bronze_erp_cust_az12;
 
+SELECT DISTINCT
+  cntry,
+  CASE
+    WHEN cleaned = '' OR cleaned IS NULL      THEN 'n/a'             -- empty or NULL → 'n/a'
+    WHEN UPPER(cleaned) = 'DE'                THEN 'Germany'         -- DE → Germany
+    WHEN UPPER(cleaned) IN ('US','USA')       THEN 'United States'   -- US/USA → United States
+    ELSE cleaned                                                    -- leave other values unchanged
+  END AS cntry
+FROM (
+  SELECT
+    cid,
+    cntry,
+    -- strip tabs, carriage returns, line feeds, and non-breaking spaces, then trim normal spaces
+    TRIM(
+      BOTH ' '
+      FROM REPLACE(
+        REPLACE(
+          REPLACE(
+            REPLACE(cntry, CHAR(9), ''),     -- remove tab characters
+          CHAR(13), ''),                     -- remove carriage returns
+        CHAR(10), ''),                       -- remove line feeds
+      UNHEX('C2A0'), '')                   -- remove non-breaking spaces
+    ) AS cleaned
+  FROM bronze_erp_loc_a101
+) t
+ORDER BY cntry;  -- order by the original country value
+
 
 -- ============================
 -- QUALITY CHECKS - SILVER LAYER
