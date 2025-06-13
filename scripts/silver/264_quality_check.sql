@@ -66,31 +66,8 @@ FROM silver_erp_cust_az12;
 
 -- Verify country standardization post-load
 SELECT DISTINCT
-  cntry,
-  CASE
-    WHEN cleaned = '' OR cleaned IS NULL      THEN 'n/a'
-    WHEN UPPER(cleaned) = 'DE'                THEN 'Germany'
-    WHEN UPPER(cleaned) IN ('US','USA')       THEN 'United States'
-    ELSE cleaned
-  END AS cntry
-FROM (
-  SELECT
-    cid,
-    cntry,
-    -- repeat whitespace cleanup for silver layer
-    TRIM(
-      BOTH ' '
-      FROM REPLACE(
-        REPLACE(
-          REPLACE(
-            REPLACE(cntry, CHAR(9), ''), 
-                  CHAR(13), ''), 
-              CHAR(10), ''), 
-        UNHEX('C2A0'), '' 
-    )) AS cleaned
-  FROM silver_erp_loc_a101
-) t
-ORDER BY cntry;  -- confirm consistency of country values
+  cntry
+FROM silver_erp_loc_a101
 
 -- ============================
 -- QUALITY CHECKS – BRONZE LAYER
