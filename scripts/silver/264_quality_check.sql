@@ -91,3 +91,73 @@ FROM (
   FROM silver_erp_loc_a101
 ) t
 ORDER BY cntry;  -- confirm consistency of country values
+
+-- ============================
+-- QUALITY CHECKS – BRONZE LAYER
+-- ============================
+
+-- Check for Unwanted Spaces
+
+SELECT 
+	*
+FROM bronze_erp_px_cat_g1v2
+WHERE cat != TRIM(cat) OR subcat != TRIM(subcat) OR maintenance != TRIM(maintenance);
+
+-- Data Standarization & Consistency
+
+SELECT DISTINCT cat
+FROM bronze_erp_px_cat_g1v2;
+
+SELECT DISTINCT subcat
+FROM bronze_erp_px_cat_g1v2;
+
+-- Standardize maintenance flag values
+
+WITH cleaned_flags AS (
+  SELECT
+    -- strip tabs, CR, LF, NBSP, then trim regular spaces
+    TRIM(
+      BOTH ' '
+      FROM REPLACE(
+        REPLACE(
+          REPLACE(
+            REPLACE(maintenance, CHAR(9), ''),    -- remove tabs
+          CHAR(13), ''),                          -- remove carriage returns
+        CHAR(10), ''),                            -- remove line feeds
+      UNHEX('C2A0'), '')                        -- remove non-breaking spaces
+    ) AS cleaned
+  FROM bronze_erp_px_cat_g1v2
+)
+SELECT DISTINCT
+  CASE
+    WHEN UPPER(cleaned) = 'YES' THEN 'Yes'   -- map any exact YES → 'Yes'
+    WHEN UPPER(cleaned) = 'NO'  THEN 'No'    -- map any exact NO  → 'No'
+  END AS maintenance
+FROM cleaned_flags
+WHERE UPPER(cleaned) IN ('YES','NO')       -- filter out any other values
+ORDER BY maintenance;
+
+-- ============================
+-- QUALITY CHECKS – SILVER LAYER
+-- After table transformations
+-- ============================
+
+-- Check for Unwanted Spaces
+
+SELECT 
+	*
+FROM silver_erp_px_cat_g1v2
+WHERE cat != TRIM(cat) OR subcat != TRIM(subcat) OR maintenance != TRIM(maintenance);
+
+-- Data Standarization & Consistency
+
+SELECT DISTINCT cat
+FROM silver_erp_px_cat_g1v2;
+
+SELECT DISTINCT subcat
+FROM silver_erp_px_cat_g1v2;
+
+-- Standardize maintenance flag values
+
+SELECT DISTINCT maintenance
+FROM silver_erp_px_cat_g1v2;
