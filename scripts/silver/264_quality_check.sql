@@ -1,27 +1,29 @@
 -- ============================
--- QUALITY CHECKS - BRONZE LAYER
+-- QUALITY CHECKS – BRONZE LAYER
 -- ============================
 
--- Identify Out-of-Range Dates
+-- Identify birthdates that are unrealistically old or in the future
 SELECT DISTINCT
     bdate
 FROM bronze_erp_cust_az12
-WHERE bdate < '1924-01-01' OR bdate > NOW();
+WHERE bdate < '1924-01-01'      -- before Jan 1, 1924
+   OR bdate > NOW();            -- after current timestamp
 
--- Data Standardization & Consistency
+-- Standardize gender codes
 SELECT DISTINCT
     gen AS original_gen,
     CASE 
-        WHEN UPPER(gen) LIKE '%F%' THEN 'Female'
-        WHEN UPPER(gen) LIKE '%M%' THEN 'Male'
-        ELSE 'n/a'
+        WHEN UPPER(gen) LIKE '%F%' THEN 'Female'   -- any form of F → Female
+        WHEN UPPER(gen) LIKE '%M%' THEN 'Male'     -- any form of M → Male
+        ELSE 'n/a'                                 -- all other or missing → n/a
     END AS standardized_gen
 FROM bronze_erp_cust_az12;
 
+-- Standardize country values
 SELECT DISTINCT
   cntry,
   CASE
-    WHEN cleaned = '' OR cleaned IS NULL      THEN 'n/a'             -- empty or NULL → 'n/a'
+    WHEN cleaned = '' OR cleaned IS NULL      THEN 'n/a'             -- empty or NULL → n/a
     WHEN UPPER(cleaned) = 'DE'                THEN 'Germany'         -- DE → Germany
     WHEN UPPER(cleaned) IN ('US','USA')       THEN 'United States'   -- US/USA → United States
     ELSE cleaned                                                    -- leave other values unchanged
@@ -30,34 +32,62 @@ FROM (
   SELECT
     cid,
     cntry,
-    -- strip tabs, carriage returns, line feeds, and non-breaking spaces, then trim normal spaces
+    -- remove tabs, CR, LF, NBSP and then trim normal spaces
     TRIM(
       BOTH ' '
       FROM REPLACE(
         REPLACE(
           REPLACE(
-            REPLACE(cntry, CHAR(9), ''),     -- remove tab characters
-          CHAR(13), ''),                     -- remove carriage returns
-        CHAR(10), ''),                       -- remove line feeds
-      UNHEX('C2A0'), '')                   -- remove non-breaking spaces
-    ) AS cleaned
+            REPLACE(cntry, CHAR(9), ''),     -- strip tab chars
+                  CHAR(13), ''),            -- strip carriage returns
+              CHAR(10), ''),                -- strip line feeds
+        UNHEX('C2A0'), ''                   -- strip non-breaking spaces
+    )) AS cleaned
   FROM bronze_erp_loc_a101
 ) t
-ORDER BY cntry;  -- order by the original country value
+ORDER BY cntry;  -- sort by country code
 
 
 -- ============================
--- QUALITY CHECKS - SILVER LAYER
+-- QUALITY CHECKS – SILVER LAYER
 -- After table transformations
 -- ============================
 
--- Identify Out-of-Range Dates
+-- Identify any future-dated birthdates after loading
 SELECT DISTINCT
     bdate
 FROM silver_erp_cust_az12
-WHERE bdate > NOW();
+WHERE bdate > NOW();            -- should not happen after cleaning
 
--- Data Standardization & Consistency
+-- Inspect normalized gender values
 SELECT DISTINCT
-    gen
+    gen                            -- should already be 'Female', 'Male', or 'n/a'
 FROM silver_erp_cust_az12;
+
+-- Verify country standardization post-load
+SELECT DISTINCT
+  cntry,
+  CASE
+    WHEN cleaned = '' OR cleaned IS NULL      THEN 'n/a'
+    WHEN UPPER(cleaned) = 'DE'                THEN 'Germany'
+    WHEN UPPER(cleaned) IN ('US','USA')       THEN 'United States'
+    ELSE cleaned
+  END AS cntry
+FROM (
+  SELECT
+    cid,
+    cntry,
+    -- repeat whitespace cleanup for silver layer
+    TRIM(
+      BOTH ' '
+      FROM REPLACE(
+        REPLACE(
+          REPLACE(
+            REPLACE(cntry, CHAR(9), ''), 
+                  CHAR(13), ''), 
+              CHAR(10), ''), 
+        UNHEX('C2A0'), '' 
+    )) AS cleaned
+  FROM silver_erp_loc_a101
+) t
+ORDER BY cntry;  -- confirm consistency of country values
