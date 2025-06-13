@@ -57,3 +57,38 @@ FROM (
     FROM bronze_erp_loc_a101
 ) t
 ORDER BY cntry;  -- Sort by the standardized country value
+
+-- Insert only 'Yes' or 'No' maintenance flags into silver table
+INSERT INTO silver_erp_px_cat_g1v2 (
+  id,
+  cat,
+  subcat,
+  maintenance
+)
+SELECT
+  id,
+  cat,
+  subcat,
+  CASE
+    WHEN UPPER(cleaned) = 'YES' THEN 'Yes'
+    WHEN UPPER(cleaned) = 'NO'  THEN 'No'
+  END AS maintenance
+FROM (
+  SELECT
+    id,
+    cat,
+    subcat,
+    TRIM(
+      BOTH ' '
+      FROM REPLACE(
+        REPLACE(
+          REPLACE(
+            REPLACE(maintenance, CHAR(9), ''),   -- remove tabs
+          CHAR(13), ''),                         -- remove carriage returns
+        CHAR(10), ''),                           -- remove line feeds
+      UNHEX('C2A0'), '')                       -- remove non-breaking spaces
+    ) AS cleaned
+  FROM bronze_erp_px_cat_g1v2
+) AS cleaned_flags
+WHERE UPPER(cleaned) IN ('YES','NO')
+ORDER BY id;
