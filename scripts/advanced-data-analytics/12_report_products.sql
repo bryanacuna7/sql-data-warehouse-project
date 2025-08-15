@@ -24,7 +24,7 @@ Highlights:
 -- =============================================================================
 -- Create Report: gold_report_customers
 -- =============================================================================
-CREATE VIEW gold_report_customers AS
+CREATE OR REPLACE VIEW gold_report_customers AS
 
 WITH base_query AS (
 /*---------------------------------------------------------------------------
